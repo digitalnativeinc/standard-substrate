@@ -1,3 +1,20 @@
+//This file is part of Substrate.
+
+// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 use crate::cli::{Cli, Subcommand};
 use crate::{chain_spec, service};
 use opportunity_runtime::Block;
@@ -33,6 +50,7 @@ impl SubstrateCli for Cli {
         Ok(match id {
             "dev" => Box::new(chain_spec::development_config()),
             "" | "opportunity" => Box::new(chain_spec::opportunity_config()),
+            "opportunity_local" => Box::new(chain_spec::opportunity_standalone_config()),
             "local" => Box::new(chain_spec::local_testnet_config()),
             path => Box::new(chain_spec::ChainSpec::from_json_file(
                 std::path::PathBuf::from(path),
@@ -133,9 +151,7 @@ pub fn run() -> sc_cli::Result<()> {
             runner.run_node_until_exit(|config| async move {
                 match config.role {
                     Role::Light => service::new_light(config),
-                    _ => {
-                        service::new_full(config).map(|(task_manager, _, _, _, _, _)| task_manager)
-                    }
+                    _ => service::new_full(config),
                 }
                 .map_err(sc_cli::Error::Service)
             })
